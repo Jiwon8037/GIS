@@ -1,0 +1,10 @@
+# map image
+/Base
+
+# buildfile
+MyOpenLayer.js
+openlayer.js
+
+# dependencies
+/node_modules
+
