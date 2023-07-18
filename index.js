@@ -7,7 +7,7 @@ const port = 4000;//포트번호
 
 app.use(express.static('./'));
 
-app.get('/Tile/:z/:y/:x', (req, res) => {
+app.get('/Tile/:z/:y/:x', (req, res, next) => {
   const { x, y, z } = req.params;
   const url = `/Base/${z}/${y}/${x}`;
   fs.readFile(__dirname + url, (err, data) => {
