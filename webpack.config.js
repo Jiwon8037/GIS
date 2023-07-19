@@ -1,7 +1,7 @@
 const webpack = require('webpack');
 
 module.exports = {
-  mode: 'development',
+  mode: 'production',
   entry: './MyOpenLayer.js',
   output: {
     path: __dirname,

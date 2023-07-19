@@ -1,9 +1,10 @@
 # map image
 /Base
 
-# buildfile
+# build file
 MyOpenLayer.js
 openlayer.js
+openlayer.js.LICENSE.txt
 
 # dependencies
 /node_modules

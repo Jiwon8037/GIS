@@ -171,20 +171,7 @@ class MyMap {
         const coordinates = point.getCoordinates();
 
         const locationName = String(feature.getId() || '');
-        const popupHTML = `<h4 style="
-            background: #293042; 
-            padding: 6px; 
-            border: 1px solid; 
-            border-radius: 10px;"
-          >
-            <a href="/monitoring/intersection/${Number(locationName.split('.')[0]) - 1}"
-              style=
-              "text-decoration: none;
-              color: white;"
-            >
-              ${locationName}
-            </a>
-          </h4>`;
+        const popupHTML = `<h4 style="background: #293042;padding: 6px;border: 1px solid;border-radius: 10px;"><a href="/monitoring/intersection/${Number(locationName.split('.')[0]) - 1}"style="text-decoration: none;color: white;">${locationName}</a></h4>`;
         const div = document.createElement('div');
         div.innerHTML = locationName ? popupHTML : '';
         popup.setElement(div);
