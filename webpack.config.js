@@ -7,10 +7,4 @@ module.exports = {
     path: __dirname,
     filename: 'openlayer.js',
   },
-  plugins: [
-    new webpack.ProvidePlugin({
-      'utils':'utils',
-    })
-  ]
 };
-

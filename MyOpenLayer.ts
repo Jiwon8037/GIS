@@ -1,7 +1,6 @@
 import { Feature, Map, Overlay, View } from 'ol';
 import { defaults } from 'ol/control';
 import { FeatureLike } from 'ol/Feature';
-import Geometry from 'ol/geom/Geometry';
 import MultiLineString from 'ol/geom/MultiLineString';
 import { Point } from 'ol/geom';
 import VectorLayer from 'ol/layer/Vector';
@@ -24,9 +23,8 @@ interface MarkerOption {
   };
   popupId?: string;
 }
-class Marker extends Vector<VectorSource<Geometry>> {
+class Marker {
   constructor(markerOption: MarkerOption) {
-    super();
     const source = new VectorSource();
     const geometry = new Point(markerOption.position).transform('EPSG:4326', 'EPSG:3857');
     const feature = new Feature({ geometry });
@@ -46,9 +44,8 @@ interface PhaseOption extends MarkerOption {
   scale?: number;
   popupId?: string;
 }
-class PhaseMarker extends Vector<VectorSource<Geometry>> {
+class PhaseMarker {
   constructor(markerOption: PhaseOption) {
-    super();
     const source = new VectorSource();
     const geometry = new Point(markerOption.position).transform('EPSG:4326', 'EPSG:3857');
     const feature = new Feature({ geometry });
@@ -102,9 +99,8 @@ interface LineOption {
   width: number;
   zoom?: boolean;
 }
-class LineString extends Vector<VectorSource<Geometry>> {
+class LineString {
   constructor(lineOption: LineOption) {
-    super();
     const points = lineOption.points.map((item) => transform([parseFloat(item[1]), parseFloat(item[0])], 'EPSG:4326', 'EPSG:3857'));
     const source = new VectorSource({});
     const geometry = new MultiLineString([points]);
@@ -140,6 +136,7 @@ interface MapOption {
     min: number;
     max: number;
   };
+  extent?: number[];
 }
 class MyMap {
   constructor(mapOption: MapOption) {
@@ -160,7 +157,7 @@ class MyMap {
         zoom: mapOption.zoom.level,
         minZoom: mapOption.zoom.min,
         maxZoom: mapOption.zoom.max,
-        //extent: JSON.parse(process.env.EXTENT), //범위제한
+        extent: mapOption.extent, //범위제한
       }),
       interactions: !mapOption.dragAndDrop ? [] : undefined,
       overlays: mapOption.markerPopup ? [popup] : undefined,
@@ -204,20 +201,12 @@ class MyMap {
   }
 }
 
-class MyOpenLayerClass {
-  constructor(option: any){
-    return new MyMap(option)
-  }
-};
-
-/* const MyOpenLayer = {
-  Marker,
-  LineString,
-  PhaseMarker,
-  Map: MyMap,
-}; */
-
-interface myWindow extends Window {
-  MyOpenLayerClass: MyOpenLayerClass;
+interface openlayerWindow extends Window {
+  MyOpenLayer?: any;
 }
-(window as unknown as myWindow).MyOpenLayerClass = MyOpenLayerClass;
+const openlayerWindow: openlayerWindow = window;
+openlayerWindow.MyOpenLayer = {};
+openlayerWindow.MyOpenLayer.Marker = Marker;
+openlayerWindow.MyOpenLayer.Map = MyMap;
+openlayerWindow.MyOpenLayer.LineString = LineString;
+openlayerWindow.MyOpenLayer.PhaseMarker = PhaseMarker;
