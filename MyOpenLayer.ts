@@ -131,6 +131,7 @@ interface MapOption {
   center: number[];
   dragAndDrop: boolean;
   markerPopup: boolean;
+  url: string;
   zoom: {
     level: number;
     min: number;
@@ -146,7 +147,7 @@ class MyMap {
       layers: [
         new Tile({
           source: new XYZ({
-            url: '/test/Tile/{z}/{x}/{y}.png',
+            url: mapOption.url + '/Tile/{z}/{x}/{y}.png',
           }),
         }),
       ],
@@ -169,9 +170,8 @@ class MyMap {
         // Get the clicked marker's coordinates
         const point = feature.getGeometry() as Point;
         const coordinates = point.getCoordinates();
-
         const locationName = String(feature.getId() || '');
-        const popupHTML = `<h4 style="background: #293042;padding: 6px;border: 1px solid;border-radius: 10px;"><a href="/monitoring/intersection/${Number(locationName.split('.')[0]) - 1}"style="text-decoration: none;color: white;">${locationName}</a></h4>`;
+        const popupHTML = `<h4 style="background: #293042;padding: 6px;border: 1px solid;border-radius: 10px;"><a href="/monitoring/intersection/?location=${locationName.split('.')[0]}"style="text-decoration: none;color: white;">${locationName}</a><span id="close-button" style="color: white; cursor: pointer;">×</span></h4>`;
         const div = document.createElement('div');
         div.innerHTML = locationName ? popupHTML : '';
         popup.setElement(div);
@@ -179,21 +179,26 @@ class MyMap {
         popup.setOffset([0, -25]); // Set the offset to move the popup above the marker
         popup.setPositioning('bottom-center'); // Set the positioning to align the bottom-center of the popup with the marker
         popup.set('visible', true);
+        document.getElementById('close-button')?.addEventListener('click', () => {
+          div.remove();
+        });
       } else {
         popup.set('visible', false);
       }
     });
-
     return map;
   }
 }
 
-interface openlayerWindow extends Window {
-  MyOpenLayer?: any;
+declare global {
+  interface Window {
+    MyOpenLayer: any;
+  }
 }
-const openlayerWindow: openlayerWindow = window;
-openlayerWindow.MyOpenLayer = {};
-openlayerWindow.MyOpenLayer.Marker = Marker;
-openlayerWindow.MyOpenLayer.Map = MyMap;
-openlayerWindow.MyOpenLayer.LineString = LineString;
-openlayerWindow.MyOpenLayer.PhaseMarker = PhaseMarker;
+
+window.MyOpenLayer = {
+  Marker,
+  Map: MyMap,
+  LineString,
+  PhaseMarker,
+};
