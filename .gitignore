@@ -6,7 +6,8 @@
 MyOpenLayer.js
 openlayer.js
 openlayer.js.LICENSE.txt
+openlayer.bundle.js
+openlayer.bundle.js.LICENSE.txt
 
 # dependencies
 /node_modules
-

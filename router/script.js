@@ -3,7 +3,7 @@ const scriptRouter = express.Router();
 const fs = require('fs');
 
 scriptRouter.get('/', (req, res, next) => {
-  fs.readFile('./openlayer.js', (err, data) => {
+  fs.readFile('./openlayer.bundle.js', (err, data) => {
     if (err) {
       next(err)
     } else {
