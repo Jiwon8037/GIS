@@ -190,6 +190,23 @@ class MyMap {
   }
 }
 
+interface ViewOption {
+  center: number[];
+  zoom: number;
+  extent?: number[];
+}
+class MyView {
+  constructor(option: ViewOption) {
+    const view = new View({
+      projection: 'EPSG:3857',
+      center: fromLonLat(option.center, 'EPSG:3857'),
+      zoom: option.zoom,
+      extent: option.extent, //범위제한
+    })
+    return view;
+  }
+}
+
 declare global {
   interface Window {
     MyOpenLayer: any;
@@ -201,4 +218,5 @@ window.MyOpenLayer = {
   Map: MyMap,
   LineString,
   PhaseMarker,
+  View: MyView,
 };
