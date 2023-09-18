@@ -196,7 +196,7 @@ interface ViewOption {
   extent?: number[];
 }
 class MyView {
-  constructor(option: ViewOption) {
+  constructor(option: ViewOption){
     const view = new View({
       projection: 'EPSG:3857',
       center: fromLonLat(option.center, 'EPSG:3857'),
