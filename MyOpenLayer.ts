@@ -12,6 +12,7 @@ import Stroke from 'ol/style/Stroke';
 import Style from 'ol/style/Style';
 import { Tile } from 'ol/layer';
 import XYZ from 'ol/source/XYZ';
+import GeoJSON from 'ol/format/GeoJSON';
 
 interface MarkerOption {
   position: number[];
@@ -21,6 +22,7 @@ interface MarkerOption {
     anchor?: number[] | undefined; //오프셋
     src?: string; //이미지 url
   };
+  zIndex?: number;
   popupId?: string;
 }
 class Marker {
@@ -33,7 +35,7 @@ class Marker {
 
     const image = new Icon(markerOption.image);
     const style = new Style({ image });
-    const layer = new Vector({ source, style });
+    const layer = new Vector({ source, style, zIndex: markerOption.zIndex });
 
     return layer;
   }
@@ -82,7 +84,7 @@ class PhaseMarker {
       zIndex: 10,
     });
     const style = [cycleStyle, aRingStyle, bRingStyle];
-    const layer = new Vector({ source, style });
+    const layer = new Vector({ source, style, zIndex: 10, });
     // style: (feature, resolution) => {
     //   return [cycleStyle, aRingStyle, bRingStyle].map(markerStyle => {
     //       markerStyle.getImage().setScale(0.5 / (resolution*3.5 / 10));
@@ -98,6 +100,7 @@ interface LineOption {
   color: string;
   width: number;
   zoom?: boolean;
+  zIndex?: number;
 }
 class LineString {
   constructor(lineOption: LineOption) {
@@ -120,6 +123,7 @@ class LineString {
     const layer = new VectorLayer({
       source,
       style: lineOption.zoom ? zoomStyle : style,
+      zIndex: lineOption.zIndex,
     });
 
     return layer;
@@ -196,7 +200,7 @@ interface ViewOption {
   extent?: number[];
 }
 class MyView {
-  constructor(option: ViewOption){
+  constructor(option: ViewOption) {
     const view = new View({
       projection: 'EPSG:3857',
       center: fromLonLat(option.center, 'EPSG:3857'),
@@ -204,6 +208,72 @@ class MyView {
       extent: option.extent, //범위제한
     })
     return view;
+  }
+}
+
+interface LinkOption {
+  geoJson: any;
+  trafficData: {
+    roadName: string;
+    linkId: number;
+    speed: string;
+  }[];
+}
+class LinkLayer {
+  constructor(option: LinkOption) {
+    const feature = new GeoJSON({ featureProjection: 'EPSG:3857' }).readFeatures(option.geoJson);
+    const smoothSource = new VectorSource();
+    const slowSource = new VectorSource();
+    const delaySource = new VectorSource();
+
+    //도로등급(고속 101, 국도 102, 103, 104, 105, 108, 지방도 106, 107) 별 링크아이디분류
+    const roadRankFilter = (rank: string[]): number[] => feature.filter((el) => rank.includes(el.getProperties().ROAD_RANK)).map((el) => el.getProperties().LINK_ID);
+    const expresswayFeatures: number[] = roadRankFilter(['101']);
+    const nationalHighwayFeatures: number[] = roadRankFilter(['102', '103', '104', '105', '108']);
+    const localwayFeatures: number[] = roadRankFilter(['106', '107']);
+
+    //도로등급별 교통데이터분류
+    const expresswayData = option.trafficData.filter((el) => expresswayFeatures.includes(el.linkId));
+    const nationalHighwayData = option.trafficData.filter((el) => nationalHighwayFeatures.includes(el.linkId));
+    const localwayData = option.trafficData.filter((el) => localwayFeatures.includes(el.linkId));
+
+    //등급별 속도
+    const expressSmooth = expresswayData.filter((el) => Number(el.speed) > 80).map((el) => el.linkId);
+    const expressSlow = expresswayData.filter((el) => 40 < Number(el.speed) && Number(el.speed) <= 80).map((el) => el.linkId);
+    const expressDelay = expresswayData.filter((el) => Number(el.speed) <= 40).map((el) => el.linkId);
+
+    const nationalSmooth = nationalHighwayData.filter((el) => Number(el.speed) > 50).map((el) => el.linkId);
+    const nationalSlow = nationalHighwayData.filter((el) => 30 < Number(el.speed) && Number(el.speed) <= 50).map((el) => el.linkId);
+    const nationalDelay = nationalHighwayData.filter((el) => Number(el.speed) <= 30).map((el) => el.linkId);
+
+    const localwaySmooth = localwayData.filter((el) => Number(el.speed) > 25).map((el) => el.linkId);
+    const localwaySlow = localwayData.filter((el) => 15 < Number(el.speed) && Number(el.speed) <= 25).map((el) => el.linkId);
+    const localwayDelay = localwayData.filter((el) => Number(el.speed) <= 15).map((el) => el.linkId);
+
+    //색상처리
+    const smooth = [...expressSmooth, ...nationalSmooth, ...localwaySmooth];
+    const slow = [...expressSlow, ...nationalSlow, ...localwaySlow];
+    const delay = [...expressDelay, ...nationalDelay, ...localwayDelay];
+
+    const green = feature.filter((el) => smooth.includes(el.getProperties().LINK_ID));
+    const orange = feature.filter((el) => slow.includes(el.getProperties().LINK_ID));
+    const red = feature.filter((el) => delay.includes(el.getProperties().LINK_ID));
+
+    smoothSource.addFeatures(green);
+    slowSource.addFeatures(orange);
+    delaySource.addFeatures(red);
+
+    const setStlye = (color: string) => (feature: any, resolution: number) =>
+      new Style({
+        stroke: new Stroke({
+          color,
+          width: 1 * ((1 / resolution) * 4) + 0.5,
+        }),
+      });
+    const layer1 = new VectorLayer({ source: smoothSource, style: setStlye('green'), zIndex: 0 });
+    const layer2 = new VectorLayer({ source: slowSource, style: setStlye('orange'), zIndex: 0 });
+    const layer3 = new VectorLayer({ source: delaySource, style: setStlye('red'), zIndex: 0 });
+    return [layer1, layer2, layer3];
   }
 }
 
@@ -219,4 +289,5 @@ window.MyOpenLayer = {
   LineString,
   PhaseMarker,
   View: MyView,
+  Link: LinkLayer,
 };

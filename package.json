@@ -20,6 +20,7 @@
     "webpack": "^5.88.2"
   },
   "devDependencies": {
+    "@types/geojson": "^7946.0.10",
     "nodemon": "^3.0.1",
     "typescript": "^5.1.6",
     "webpack-bundle-analyzer": "^4.9.1",
