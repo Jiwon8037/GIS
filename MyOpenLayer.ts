@@ -247,7 +247,7 @@ class MyView {
 
 interface LinkOption {
   geoJson: any;
-  trafficData: {
+  trafficData?: {
     roadName: string;
     linkId: number;
     speed: string;
@@ -256,6 +256,13 @@ interface LinkOption {
 class LinkLayer {
   constructor(option: LinkOption) {
     const feature = new GeoJSON({ featureProjection: 'EPSG:3857' }).readFeatures(option.geoJson);
+
+    if (!option.trafficData || option.trafficData.length == 0) {
+      const source = new VectorSource({ features: feature });
+      const layer = new VectorLayer({ source, zIndex: 0 });
+      return [layer];
+    }
+    
     const smoothSource = new VectorSource();
     const slowSource = new VectorSource();
     const delaySource = new VectorSource();
