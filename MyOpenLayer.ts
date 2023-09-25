@@ -24,6 +24,7 @@ interface MarkerOption {
   };
   zIndex?: number;
   popupId?: string;
+  smart?: object;
 }
 class Marker {
   constructor(markerOption: MarkerOption) {
@@ -31,6 +32,9 @@ class Marker {
     const geometry = new Point(markerOption.position).transform('EPSG:4326', 'EPSG:3857');
     const feature = new Feature({ geometry });
     feature.setId(markerOption.popupId);
+    if (markerOption.smart) {
+      feature.setProperties(markerOption.smart);
+    }
     source.addFeature(feature);
 
     const image = new Icon(markerOption.image);
@@ -52,6 +56,9 @@ class PhaseMarker {
     const geometry = new Point(markerOption.position).transform('EPSG:4326', 'EPSG:3857');
     const feature = new Feature({ geometry });
     feature.setId(markerOption.popupId);
+    if (markerOption.smart) {
+      feature.setProperties(markerOption.smart);
+    }
     source.addFeature(feature);
     const cycleStyle = new Style({
       image: new Icon({
