@@ -6,7 +6,7 @@ const linkRouter = require('./router/link');
 const compression = require('compression');
 const app = express();
 const server = http.createServer(app);
-const port = 4000;//포트번호
+const port = process.env.PORT;//포트번호
 
 app.use(compression());
 app.use(express.json());

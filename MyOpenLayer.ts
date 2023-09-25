@@ -175,7 +175,36 @@ class MyMap {
         const point = feature.getGeometry() as Point;
         const coordinates = point.getCoordinates();
         const locationName = String(feature.getId() || '');
-        const popupHTML = `<h4 style="background: #293042;padding: 6px;border: 1px solid;border-radius: 10px;"><a href="/monitoring/intersection/?location=${locationName.split('.')[0]}"style="text-decoration: none;color: white;">${locationName}</a><span id="close-button" style="color: white; cursor: pointer;">×</span></h4>`;
+        const ip = feature.getProperties();
+        const popupHTML = `<div id="location-modal" style="background: #293042; padding: 6px; border: 1px solid; border-radius: 10px;">
+        <div style="display: flex;">
+          <h4>
+            <a href="/monitoring/intersection/?location=${locationName.split('.')[0]}" style="text-decoration: none; color: white;">
+              ${locationName}
+            </a>
+          </h4>
+          <h4 style="margin-left: auto; font-size: 18px;"><span id="close-button" style="color: white; cursor: pointer;">×</span></h4>
+        </div>
+        ${
+          ip.북
+            ? `<div style="margin-bottom: 5px;">
+          <span id="camera-button" style="color: white; font-size: 12px">실시간 영상</span>
+            <select id="camera" style="font-size: 12px">
+              <option>--</option>
+              <option value=${ip.북}>북</option>
+              <option value=${ip.동}>동</option>
+              <option value=${ip.남}>남</option>
+              <option value=${ip.서}>서</option>
+            </select>
+        </div>
+        <div>
+          <video id="cctv-video" controls autoplay loop width="640" height="400">
+            <source type="video/webm" />
+          </video>
+        </div>`
+            : ''
+        }
+      </div>`;
         const div = document.createElement('div');
         div.innerHTML = locationName ? popupHTML : '';
         popup.setElement(div);
@@ -185,6 +214,11 @@ class MyMap {
         popup.set('visible', true);
         document.getElementById('close-button')?.addEventListener('click', () => {
           div.remove();
+        });
+        document.getElementById('camera')?.addEventListener('change', (e) => {
+          const video = document.getElementById('cctv-video') as HTMLVideoElement;
+          const ip = (e.currentTarget as HTMLSelectElement).value;
+          video.src = `${process.env.CCTV_URL}/streaming?ip=${ip}`;
         });
       } else {
         popup.set('visible', false);

@@ -11,3 +11,5 @@ openlayer.bundle.js.LICENSE.txt
 
 # dependencies
 /node_modules
+
+.env
