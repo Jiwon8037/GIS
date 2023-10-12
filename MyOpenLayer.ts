@@ -195,8 +195,7 @@ class MyMap {
             <div style="margin-left: 15px; display: flex">
               <h4 id="camera-button" style="color: white;">실시간 영상: </h4>
               <select id="camera" style="font-size: 12px; margin-left: 10px;">
-                <option>--</option>
-                <option value=${ip.북}>북</option>
+                <option value=${ip.북} selected>북</option>
                 <option value=${ip.동}>동</option>
                 <option value=${ip.남}>남</option>
                 <option value=${ip.서}>서</option>
@@ -224,9 +223,16 @@ class MyMap {
         div.innerHTML = locationName ? popupHTML : '';
         popup.setElement(div);
         popup.setPosition(coordinates);
-        popup.setOffset([0, -25]); // Set the offset to move the popup above the marker
+        popup.setOffset([0, ip.북 ? 465 : -25]); // Set the offset to move the popup above the marker
         popup.setPositioning('bottom-center'); // Set the positioning to align the bottom-center of the popup with the marker
         popup.set('visible', true);
+
+        if (ip.북) {
+          const value = (document.getElementById('camera') as HTMLSelectElement).value;
+          const video = document.getElementById('cctv-video') as HTMLVideoElement;
+          video.src = `${mapOption.videoUrl}?ip=${value}`;
+        }
+
         document.getElementById('close-button')?.addEventListener('click', () => {
           const video = document.getElementById('cctv-video');
           if (video) {
@@ -239,6 +245,7 @@ class MyMap {
           const ip = (e.currentTarget as HTMLSelectElement).value;
           video.src = `${mapOption.videoUrl}?ip=${ip}`;
         });
+
       } else {
         popup.set('visible', false);
       }
