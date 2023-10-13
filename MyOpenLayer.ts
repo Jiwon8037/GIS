@@ -13,6 +13,7 @@ import Style from 'ol/style/Style';
 import { Tile } from 'ol/layer';
 import XYZ from 'ol/source/XYZ';
 import GeoJSON from 'ol/format/GeoJSON';
+import DragPan from 'ol/interaction/DragPan';
 
 interface MarkerOption {
   position: number[];
@@ -175,6 +176,14 @@ class MyMap {
       interactions: !mapOption.dragAndDrop ? [] : undefined,
       overlays: mapOption.markerPopup ? [popup] : undefined,
     });
+
+    let dragPan: null | DragPan = null;
+    map.getInteractions().forEach(function (interaction) {
+      if (interaction instanceof DragPan) {
+        dragPan = interaction;
+      }
+    });
+
     map.on('singleclick', function (e) {
       // Check if a marker was clicked
       const feature = map.forEachFeatureAtPixel(e.pixel, (feature) => feature);
@@ -223,14 +232,26 @@ class MyMap {
         div.innerHTML = locationName ? popupHTML : '';
         popup.setElement(div);
         popup.setPosition(coordinates);
-        popup.setOffset([0, ip.북 ? 465 : -25]); // Set the offset to move the popup above the marker
-        popup.setPositioning('bottom-center'); // Set the positioning to align the bottom-center of the popup with the marker
+        popup.setOffset([0, -35]); // Set the offset to move the popup above the marker
+        popup.setPositioning('center-center'); // Set the positioning to align the bottom-center of the popup with the marker
         popup.set('visible', true);
 
         if (ip.북) {
+          popup.setOffset([0, 0]); // Set the offset to move the popup above the marker
           const value = (document.getElementById('camera') as HTMLSelectElement).value;
           const video = document.getElementById('cctv-video') as HTMLVideoElement;
           video.src = `${mapOption.videoUrl}?ip=${value}`;
+
+          div.addEventListener('mousedown', (e) => {
+            dragPan?.setActive(false);
+            popup.set('dragging', true);
+          })
+          div.addEventListener('mouseup', (e) => {
+            if (popup.get('dragging') === true) {
+              dragPan?.setActive(true);
+              popup.set('dragging', false);
+            }
+          })
         }
 
         document.getElementById('close-button')?.addEventListener('click', () => {
@@ -248,6 +269,11 @@ class MyMap {
 
       } else {
         popup.set('visible', false);
+      }
+    });
+    map.on('pointermove', function (evt) {
+      if (popup.get('dragging') === true) {
+        popup.setPosition(evt.coordinate);
       }
     });
     return map;
