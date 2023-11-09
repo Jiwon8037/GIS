@@ -91,7 +91,20 @@ class PhaseMarker {
       }),
       zIndex: 10,
     });
-    const style = [cycleStyle, aRingStyle, bRingStyle];
+
+    let camera: Style | null = null;
+    if (markerOption.smart) {
+      camera = new Style({
+        image: new Icon({
+          opacity: 1,
+          scale: markerOption.scale,
+          anchor: markerOption?.image?.anchor ? [...markerOption.image.anchor].map(el => el += 1.3) : undefined,
+          src: `/marker/phaseIcon/cctv.png`,
+        }),
+        zIndex: 10,
+      });
+    }
+    const style = camera ? [cycleStyle, aRingStyle, bRingStyle, camera] : [cycleStyle, aRingStyle, bRingStyle];
     const layer = new Vector({ source, style, zIndex: 10, });
     // style: (feature, resolution) => {
     //   return [cycleStyle, aRingStyle, bRingStyle].map(markerStyle => {
@@ -210,7 +223,7 @@ class MyMap {
                 <option value=${ip.서}>서</option>
               </select>
             </div>
-            <h4 style="margin-left: auto; font-size: 18px;"><span id="close-button" style="color: white; cursor: pointer;">×</span></h4>
+            <h4 style="margin-left: auto; font-size: 30px;"><span id="close-button" style="color: white; cursor: pointer;">×</span></h4>
           </div>
           <div>
             <video id="cctv-video" controls autoplay loop width="640" height="400">
@@ -241,7 +254,6 @@ class MyMap {
           const value = (document.getElementById('camera') as HTMLSelectElement).value;
           const video = document.getElementById('cctv-video') as HTMLVideoElement;
           video.src = `${mapOption.videoUrl}?ip=${value}`;
-
           div.addEventListener('mousedown', (e) => {
             dragPan?.setActive(false);
             popup.set('dragging', true);
