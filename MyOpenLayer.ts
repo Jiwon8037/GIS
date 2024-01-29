@@ -1,5 +1,5 @@
 import { Feature, Map, Overlay, View } from 'ol';
-import { defaults } from 'ol/control';
+import { ZoomSlider, defaults } from 'ol/control';
 import { FeatureLike } from 'ol/Feature';
 import MultiLineString from 'ol/geom/MultiLineString';
 import { Point } from 'ol/geom';
@@ -14,6 +14,10 @@ import { Tile } from 'ol/layer';
 import XYZ from 'ol/source/XYZ';
 import GeoJSON from 'ol/format/GeoJSON';
 import DragPan from 'ol/interaction/DragPan';
+import { Coordinate } from 'ol/coordinate';
+//import { helpers } from '@turf/turf';
+//import { along } from '@turf/turf';
+//import { lineString } from '@turf/turf';
 
 interface MarkerOption {
   position: number[];
@@ -25,7 +29,6 @@ interface MarkerOption {
   };
   zIndex?: number;
   popupId?: string;
-  smart?: object;
 }
 class Marker {
   constructor(markerOption: MarkerOption) {
@@ -33,15 +36,12 @@ class Marker {
     const geometry = new Point(markerOption.position).transform('EPSG:4326', 'EPSG:3857');
     const feature = new Feature({ geometry });
     feature.setId(markerOption.popupId);
-    if (markerOption.smart) {
-      feature.setProperties(markerOption.smart);
-    }
+
     source.addFeature(feature);
 
     const image = new Icon(markerOption.image);
     const style = new Style({ image });
     const layer = new Vector({ source, style, zIndex: markerOption.zIndex });
-
     return layer;
   }
 }
@@ -57,9 +57,7 @@ class PhaseMarker {
     const geometry = new Point(markerOption.position).transform('EPSG:4326', 'EPSG:3857');
     const feature = new Feature({ geometry });
     feature.setId(markerOption.popupId);
-    if (markerOption.smart) {
-      feature.setProperties(markerOption.smart);
-    }
+
     source.addFeature(feature);
     const cycleStyle = new Style({
       image: new Icon({
@@ -92,19 +90,7 @@ class PhaseMarker {
       zIndex: 10,
     });
 
-    let camera: Style | null = null;
-    if (markerOption.smart) {
-      camera = new Style({
-        image: new Icon({
-          opacity: 1,
-          scale: markerOption.scale,
-          anchor: markerOption?.image?.anchor ? [...markerOption.image.anchor].map(el => el += 1.3) : undefined,
-          src: `/marker/phaseIcon/cctv.png`,
-        }),
-        zIndex: 10,
-      });
-    }
-    const style = camera ? [cycleStyle, aRingStyle, bRingStyle, camera] : [cycleStyle, aRingStyle, bRingStyle];
+    const style = [cycleStyle, aRingStyle, bRingStyle];
     const layer = new Vector({ source, style, zIndex: 10, });
     // style: (feature, resolution) => {
     //   return [cycleStyle, aRingStyle, bRingStyle].map(markerStyle => {
@@ -151,6 +137,42 @@ class LineString {
   }
 }
 
+// interface DetectOption {
+//   line: string[][];
+//   carCount: number;
+//   carDistance: number;
+//   zIndex?: number;
+//   image: {
+//     scale: number; //크기
+//     src: string; //이미지 url
+//   };
+// }
+// class DetectPoint {
+//   constructor(option: DetectOption) {
+
+//     const line = helpers.lineString(option.line.map(item => [parseFloat(item[1]), parseFloat(item[0])]));
+//     /* const layers = Array.from({length: option.carCount}).map((_, i) => {
+//       const source = new VectorSource();
+//       const getMeters = along(line, i * option.carDistance, { units: 'meters' });
+//       const feature = new GeoJSON().readFeature(getMeters, { featureProjection: 'EPSG:3857' });  
+//       source.addFeature(feature);
+
+//       const style = new Style({
+//         image: new Icon({ //마커 이미지
+//           scale: option.image.scale, //크기 1=100%
+//           src: option.image.src
+//         }),
+//       })
+//       const layer = new Vector({source, style, zIndex: option.zIndex});
+//       return layer;
+//     }); */
+//     const getMeters = along(line, option.carDistance, { units: 'meters' });
+//     const feature = new GeoJSON().readFeature(getMeters, { featureProjection: 'EPSG:3857' });
+//     const coord = feature.getProperties().getCoordinates();
+//     return coord;
+//   }
+// }
+
 interface MapOption {
   target: string | HTMLElement;
   center: number[];
@@ -163,7 +185,6 @@ interface MapOption {
     max: number;
   };
   extent?: number[];
-  videoUrl?: string;
 }
 class MyMap {
   constructor(mapOption: MapOption) {
@@ -190,12 +211,17 @@ class MyMap {
       overlays: mapOption.markerPopup ? [popup] : undefined,
     });
 
-    let dragPan: null | DragPan = null;
+    if (mapOption.dragAndDrop) {
+      const zoomSlider = new ZoomSlider();
+      map.addControl(zoomSlider);
+    }
+
+    /* let dragPan: null | DragPan = null;
     map.getInteractions().forEach(function (interaction) {
       if (interaction instanceof DragPan) {
         dragPan = interaction;
       }
-    });
+    }); */
 
     map.on('singleclick', function (e) {
       // Check if a marker was clicked
@@ -205,33 +231,7 @@ class MyMap {
         const point = feature.getGeometry() as Point;
         const coordinates = point.getCoordinates();
         const locationName = String(feature.getId() || '');
-        const ip = feature.getProperties();
-        const popupHTML = ip.북 ?
-          `<div id="location-modal" style="background: #293042; padding: 6px; border: 1px solid; border-radius: 10px;">
-          <div style="display: flex; padding: 5px">
-            <h4>
-              <a href="/monitoring/intersection/?location=${locationName.split('.')[0]}" style="text-decoration: none; color: white;">
-                ${locationName}
-              </a>
-            </h4>
-            <div style="margin-left: 15px; display: flex">
-              <h4 id="camera-button" style="color: white;">실시간 영상: </h4>
-              <select id="camera" style="font-size: 12px; margin-left: 10px;">
-                <option value=${ip.북} selected>북</option>
-                <option value=${ip.동}>동</option>
-                <option value=${ip.남}>남</option>
-                <option value=${ip.서}>서</option>
-              </select>
-            </div>
-            <h4 style="margin-left: auto; font-size: 30px;"><span id="close-button" style="color: white; cursor: pointer;">×</span></h4>
-          </div>
-          <div>
-            <video id="cctv-video" controls autoplay loop width="640" height="400">
-              <source type="video/webm" />
-            </video>
-          </div>
-        </div>`
-          :
+        const popupHTML =
           `<div id="location-modal" style="background: #293042; padding: 6px; border: 1px solid; border-radius: 10px;">
           <div style="display: flex;">
             <h4>
@@ -249,36 +249,6 @@ class MyMap {
         popup.setPositioning('center-center'); // Set the positioning to align the bottom-center of the popup with the marker
         popup.set('visible', true);
 
-        if (ip.북) {
-          popup.setOffset([0, 0]); // Set the offset to move the popup above the marker
-          const value = (document.getElementById('camera') as HTMLSelectElement).value;
-          const video = document.getElementById('cctv-video') as HTMLVideoElement;
-          video.src = `${mapOption.videoUrl}?ip=${value}`;
-          div.addEventListener('mousedown', (e) => {
-            dragPan?.setActive(false);
-            popup.set('dragging', true);
-          })
-          div.addEventListener('mouseup', (e) => {
-            if (popup.get('dragging') === true) {
-              dragPan?.setActive(true);
-              popup.set('dragging', false);
-            }
-          })
-        }
-
-        document.getElementById('close-button')?.addEventListener('click', () => {
-          const video = document.getElementById('cctv-video');
-          if (video) {
-            (video as HTMLVideoElement).src = '';
-          }
-          div.remove();
-        });
-        document.getElementById('camera')?.addEventListener('change', (e) => {
-          const video = document.getElementById('cctv-video') as HTMLVideoElement;
-          const ip = (e.currentTarget as HTMLSelectElement).value;
-          video.src = `${mapOption.videoUrl}?ip=${ip}`;
-        });
-
       } else {
         popup.set('visible', false);
       }
@@ -294,7 +264,11 @@ class MyMap {
 
 interface ViewOption {
   center: number[];
-  zoom: number;
+  zoom: {
+    zoom: number,
+    min: number,
+    max: number,
+  };
   extent?: number[];
 }
 class MyView {
@@ -302,7 +276,9 @@ class MyView {
     const view = new View({
       projection: 'EPSG:3857',
       center: fromLonLat(option.center, 'EPSG:3857'),
-      zoom: option.zoom,
+      zoom: option.zoom.zoom,
+      minZoom: option.zoom.min,
+      maxZoom: option.zoom.max,
       extent: option.extent, //범위제한
     })
     return view;
@@ -382,6 +358,16 @@ class LinkLayer {
   }
 }
 
+interface PointOption {
+  coord: Coordinate;
+}
+class PointReturn {
+  constructor(option: PointOption) {
+    const point = transform(option.coord, 'EPSG:3857', 'EPSG:4326');
+    return point;
+  }
+}
+
 declare global {
   interface Window {
     MyOpenLayer: any;
@@ -395,4 +381,6 @@ window.MyOpenLayer = {
   PhaseMarker,
   View: MyView,
   Link: LinkLayer,
+  //DetectPoint,
+  PointReturn,
 };
