@@ -5,6 +5,7 @@ const http = require('http');
 const tileMapRouter = require('./router/tile');
 const scriptRouter = require('./router/script');
 const linkRouter = require('./router/link');
+const sourcemapRouter = require('./router/sourcemap');
 const compression = require('compression');
 const app = express();
 const server = http.createServer(app);
@@ -14,6 +15,7 @@ app.use(compression());
 app.use(express.json());
 app.use('/Tile', tileMapRouter);
 app.use('/openlayer', scriptRouter);
+app.use('/openlayer.bundle.js.map', sourcemapRouter);
 app.use('/link', linkRouter);
 app.use((req, res, next) => {//에러처리파트
   const err = new Error('파일 경로 오류 : 해당 파일을 찾지 못했습니다.');
