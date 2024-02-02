@@ -61,10 +61,10 @@ class PhaseMarker {
     source.addFeature(feature);
     const cycleStyle = new Style({
       image: new Icon({
-        opacity: 1,
+        opacity: 0.8,
         scale: markerOption.scale,
         anchor: markerOption.image?.anchor,
-        rotation: markerOption.showPhase.degree * (Math.PI / 180),
+        rotation: markerOption.showPhase?.degree ? markerOption.showPhase.degree * (Math.PI / 180) : 0,
         src: '/marker/phaseIcon/cycle.png',
       }),
       zIndex: 10,
@@ -74,8 +74,8 @@ class PhaseMarker {
         opacity: 1,
         scale: markerOption.scale,
         anchor: markerOption.image?.anchor,
-        rotation: markerOption.showPhase.degree * (Math.PI / 180),
-        src: `/marker/phaseIcon/72px/${markerOption.showPhase.ringA.arrow_image}`,
+        rotation: markerOption.showPhase?.degree ? markerOption.showPhase.degree * (Math.PI / 180) : 0,
+        src: `/marker/phaseIcon/72px/${markerOption.showPhase?.ringA?.arrow_image ?? 'normalflash.png'}`,
       }),
       zIndex: 10,
     });
@@ -84,20 +84,23 @@ class PhaseMarker {
         opacity: 1,
         scale: markerOption.scale,
         anchor: markerOption.image?.anchor,
-        rotation: markerOption.showPhase.degree * (Math.PI / 180),
-        src: `/marker/phaseIcon/72px/${markerOption.showPhase.ringB.arrow_image}`,
+        rotation: markerOption.showPhase?.degree ? markerOption.showPhase.degree * (Math.PI / 180) : 0,
+        src: `/marker/phaseIcon/72px/${markerOption.showPhase?.ringB?.arrow_image ?? 'normalflash.png'}`,
       }),
       zIndex: 10,
     });
 
     const style = [cycleStyle, aRingStyle, bRingStyle];
-    const layer = new Vector({ source, style, zIndex: 10, });
-    // style: (feature, resolution) => {
-    //   return [cycleStyle, aRingStyle, bRingStyle].map(markerStyle => {
-    //       markerStyle.getImage().setScale(0.5 / (resolution*3.5 / 10));
-    //       return markerStyle;
-    //   })
-    // },
+    const layer = new Vector({ 
+      source, 
+      zIndex: 10, 
+      style: (feature, resolution) => {
+        return style.map(markerStyle => {
+            markerStyle.getImage().setScale(0.5 / (resolution * 8 / 10));
+            return markerStyle;
+        })
+      },
+    });
     return layer;
   }
 }
@@ -232,7 +235,7 @@ class MyMap {
         const coordinates = point.getCoordinates();
         const locationName = String(feature.getId() || '');
         const popupHTML =
-          `<div id="location-modal" style="background: #293042; padding: 6px; border: 1px solid; border-radius: 10px;">
+          `<div id="location-modal" style="background: rgba(0,0,20,0.7); padding: 6px; border: 1px solid; border-radius: 10px;">
           <div style="display: flex;">
             <h4>
               <a href="/monitoring/intersection/?location=${locationName.split('.')[0]}" style="text-decoration: none; color: white;">${locationName}</a>
@@ -245,9 +248,13 @@ class MyMap {
         div.innerHTML = locationName ? popupHTML : '';
         popup.setElement(div);
         popup.setPosition(coordinates);
-        popup.setOffset([0, -35]); // Set the offset to move the popup above the marker
+        popup.setOffset([0, -70]); // Set the offset to move the popup above the marker
         popup.setPositioning('center-center'); // Set the positioning to align the bottom-center of the popup with the marker
         popup.set('visible', true);
+
+        document.getElementById('close-button')?.addEventListener('click', () => {
+          div.remove();
+        });
 
       } else {
         popup.set('visible', false);
