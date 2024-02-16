@@ -10,7 +10,10 @@ tileMapRouter.get('/:z/:y/:x', (req, res) => {
       res.status(404);
       res.send(err.message);
     } else {
-      res.writeHead(200, { "Content-Type": "image/png" });
+      res.writeHead(200, { 
+        "Content-Type": "image/png", 
+        "Cache-Control": "public, max-age=31536000, immutable" 
+      });
       res.end(data);
     }
   });
