@@ -13,8 +13,9 @@ import Style from 'ol/style/Style';
 import { Tile } from 'ol/layer';
 import XYZ from 'ol/source/XYZ';
 import GeoJSON from 'ol/format/GeoJSON';
-import DragPan from 'ol/interaction/DragPan';
 import { Coordinate } from 'ol/coordinate';
+import Text from 'ol/style/Text';
+//import DragPan from 'ol/interaction/DragPan';
 //import { helpers } from '@turf/turf';
 //import { along } from '@turf/turf';
 //import { lineString } from '@turf/turf';
@@ -91,17 +92,35 @@ class PhaseMarker {
     });
 
     const style = [cycleStyle, aRingStyle, bRingStyle];
-    const layer = new Vector({ 
-      source, 
-      zIndex: 10, 
+    const layer = new Vector({
+      source,
+      zIndex: 10,
       style: (feature, resolution) => {
         return style.map(markerStyle => {
-            markerStyle.getImage().setScale(0.5 / (resolution * 8 / 10));
-            return markerStyle;
+          markerStyle.getImage().setScale(0.5 / (resolution * 8 / 10));
+          return markerStyle;
         })
       },
     });
     return layer;
+  }
+}
+
+class StringMarker {
+  constructor(markerOption: MarkerOption) {
+    const source = new VectorSource();
+    const geometry = new Point(markerOption.position).transform('EPSG:4326', 'EPSG:3857');
+    const feature = new Feature({ geometry });
+    feature.setId(markerOption.popupId);
+    source.addFeature(feature);
+    const text = new Text({
+      text: markerOption.popupId || '',
+      font: "bold 20px sans-serif",
+      offsetY: -80
+    })
+
+    const style = new Style({ text });
+    return new Vector({ source, style });
   }
 }
 
@@ -236,19 +255,22 @@ class MyMap {
         const locationName = String(feature.getId() || '');
         const popupHTML =
           `<div id="location-modal" style="background: rgba(0,0,20,0.7); padding: 6px; border: 1px solid; border-radius: 10px;">
-          <div style="display: flex;">
+          <div style="display: flex; margin-bottom: 5px;">
             <h4>
               <a href="/monitoring/intersection/?location=${locationName.split('.')[0]}" style="text-decoration: none; color: white;">${locationName}</a>
             </h4>
             <h4 style="margin-left: auto; font-size: 18px;"><span id="close-button" style="color: white; cursor: pointer;">×</span></h4>
           </div>
+          <div style="padding:2px;"><a href="/config/intersection?location=${locationName.split('.')[0]}" style="text-decoration: none; color: white;">기반데이터</a></div>
+          <div style="padding:2px;"><a href="/config/phase?location=${locationName.split('.')[0]}" style="text-decoration: none; color: white;">현시정보</a></div>
+          <div style="padding:2px;"><a href="/analysis/operationlog?location=${locationName.split('.')[0]}" style="text-decoration: none; color: white;">운영이력</a></div>
         </div>`;
 
         const div = document.createElement('div');
         div.innerHTML = locationName ? popupHTML : '';
         popup.setElement(div);
         popup.setPosition(coordinates);
-        popup.setOffset([0, -70]); // Set the offset to move the popup above the marker
+        popup.setOffset([135, 0]); // Set the offset to move the popup above the marker
         popup.setPositioning('center-center'); // Set the positioning to align the bottom-center of the popup with the marker
         popup.set('visible', true);
 
@@ -390,4 +412,5 @@ window.MyOpenLayer = {
   Link: LinkLayer,
   //DetectPoint,
   PointReturn,
+  StringMarker,
 };
