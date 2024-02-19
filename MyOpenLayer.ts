@@ -120,7 +120,7 @@ class StringMarker {
     })
 
     const style = new Style({ text });
-    return new Vector({ source, style });
+    return new Vector({ source, style, zIndex: 10, });
   }
 }
 
